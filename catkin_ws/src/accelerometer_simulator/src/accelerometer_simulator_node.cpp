@@ -30,25 +30,28 @@ float getXAcceleration(float z) {
     return ((Vw*C*P*A*exp((-C*P*A*z) / (2*M))) / (2*M)) / G;
 }
 
-float getzAcceleration(float time) {
-    return (((Fup - M*G)*((sech((sqrt(Fup - M*G)*sqrt(0.5*C*P*A)*time) / M)) ** 2)) / M) / G;
+float getZAcceleration(float time) {
+    return (((Fup - M*G)*pow(1.0 / (cosh((sqrt(Fup - M*G)*sqrt(0.5*C*P*A)*time) / M)), 2)) / M) / G;
 }
+
+// Define random generator with Gaussian distribution
+const double mean = 0.0;
+const double stddev = 0.1;
+std::default_random_engine generatorX;
+std::default_random_engine generatorZ;
+std::normal_distribution<double> distX(mean, stddev);
+std::normal_distribution<double> distZ(mean, stddev);
 
 dynamics_simulator::true_dynamics generateNoise(const dynamics_simulator::true_dynamics& msg) {
     // Get acceleration values without noise
-    x = getXAcceleration(msg.z);
-    z = getzAcceleration(msg.time);
-
-    // Define random generator with Gaussian distribution
-    const double mean = 0.0;
-    const double stddev = 0.1;
-    std::default_random_engine generator;
-    std::normal_distribution<double> dist(mean, stddev);
+    float x = getXAcceleration(msg.z);
+    float z = getZAcceleration(msg.time);
 
     // Add Gaussian noise
     dynamics_simulator::true_dynamics noiseMsg;
-    noiseMsg.x = x + dist(generator);
-    noiseMsg.z = z + dist(generator);
+    noiseMsg.x = x + distX(generatorX);
+    noiseMsg.z = z + distZ(generatorZ);
+    noiseMsg.time = msg.time;
 
     return noiseMsg;
 }

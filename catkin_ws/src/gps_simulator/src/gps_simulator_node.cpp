@@ -9,17 +9,18 @@
 // Make publisher global, so that it can be used in callback function
 ros::Publisher gps_publisher;
 
-dynamics_simulator::true_dynamics generateNoise(const dynamics_simulator::true_dynamics& msg) {
-    // Define random generator with Gaussian distribution
-    const double mean = 0.0;
-    const double stddev = 60.0;
-    std::default_random_engine generator;
-    std::normal_distribution<double> dist(mean, stddev);
+// Define random generator with Gaussian distribution
+const double mean = 0.0;
+const double stddev = 60.0;
+std::default_random_engine generator;
+std::normal_distribution<double> dist(mean, stddev);
 
+dynamics_simulator::true_dynamics generateNoise(const dynamics_simulator::true_dynamics& msg) {
     // Add Gaussian noise
     dynamics_simulator::true_dynamics noiseMsg;
     noiseMsg.x = msg.x + dist(generator);
     noiseMsg.z = msg.z + dist(generator);
+    noiseMsg.time = msg.time;
 
     return noiseMsg;
 }
