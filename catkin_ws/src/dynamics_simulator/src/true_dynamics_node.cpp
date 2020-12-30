@@ -6,7 +6,7 @@
 #include <math.h>
 
 // Global constants
-float A = 3.00;  // Assume cross section area is 10m^2
+float A = 3.00;  // Assume cross section area is 3.00m^2
 float C = 0.35;
 float P = 1.225;  // 1.225g/L air density at 15 degrees Celsius
 float M = 120.00;  // 100kg + 20kg = 120kg
@@ -45,12 +45,12 @@ float getXCoordinate(float z, int time) {
         if (!newConditions) {
             // Conditions above 1000m
             float lastZCoordinate = getZCoordinate(time-1);
-            startingV = xVelocityFunction(lastZCoordinate);
             startingD = getXCoordinate(lastZCoordinate, time-1);
+            startingV = xVelocityFunction(lastZCoordinate);
             newConditions = true;
         }
 
-        z = z - 1000;
+        z -= 1000;
     }
 
     float x = Vw*exp((-C*P*A*z)/(2*M))*((2*M)/(C*P*A)) + Vw*z - Vw*((2*M) / (C*P*A)) + startingV * z + startingD;
@@ -83,10 +83,11 @@ int main(int argc, char **argv) {
 
         msg.x = coordinateX;
         msg.z = coordinateZ;
+        msg.time = simulationTime;
 
         dynamics_publisher.publish(msg);
 
-        // Print simulation status every 10 seconds in simulation time
+        // Print simulation status every 2 seconds in simulation time
         if (simulationTime % 1 == 0) {
             ROS_INFO("Simulation time: %i \t (Current position: Z: %f, X: %f)", simulationTime, coordinateZ, coordinateX);
         }

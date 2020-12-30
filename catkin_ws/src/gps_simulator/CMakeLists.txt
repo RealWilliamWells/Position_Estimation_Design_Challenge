@@ -4,20 +4,7 @@ project(gps_simulator)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS roscpp message_generation)
-
-#######################################
-## Declare ROS messages and services ##
-#######################################
-
-add_message_files(
-        FILES gps_measurement.msg
-)
-
-## Generate added messages and services with any dependencies listed here
-generate_messages(
-        DEPENDENCIES std_msgs roscpp
-)
+find_package(catkin REQUIRED COMPONENTS roscpp message_generation dynamics_simulator)
 
 ###################################################
 ## Declare things to be passed to other projects ##
@@ -44,9 +31,7 @@ add_executable(${PROJECT_NAME} src/gps_simulator_node.cpp)
 target_link_libraries(${PROJECT_NAME}
         ${catkin_LIBRARIES}
         )
-add_dependencies(${PROJECT_NAME}
-        ${PROJECT_NAME}_generate_messages_cpp ${catkin_EXPORTED_TARGETS}
-        )
+add_dependencies(dynamics_simulator ${catkin_EXPORTED_TARGETS})
 
 #############
 ## Install ##
