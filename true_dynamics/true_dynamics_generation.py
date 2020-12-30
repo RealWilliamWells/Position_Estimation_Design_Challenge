@@ -15,12 +15,24 @@ def xDisplacementFunction(z):
     Vwa = -5.00  # Wind velocity 1000m and below
     Vwb = 5.00  # Wind velocity above 1000m
 
+    # Initial conditions
     Vw = Vwa
+    startingD = 0
+    newConditions = False
 
     d = []
 
     for k in z:
-        currentD = Vw*math.exp((-C*P*A*k)/(2*M))*((2*M)/(C*P*A)) + Vw*k - Vw*((2*M) / (C*P*A))
+        if (k>1000):
+            k = k - 1000
+
+            if not newConditions:
+                # Conditions above 1000m
+                Vw = Vwb
+                startingD = d[len(d)-1]
+                newConditions = True
+
+        currentD = Vw*math.exp((-C*P*A*k)/(2*M))*((2*M)/(C*P*A)) + Vw*k - Vw*((2*M) / (C*P*A)) + startingD
         d.append(currentD)
 
     return d
