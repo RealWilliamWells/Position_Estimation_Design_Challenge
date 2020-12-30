@@ -27,12 +27,12 @@ float xVelocityFunction(float z) {
     return Vx;
 }
 
-float getZCoordinate(int time) {
+float getZCoordinate(float time) {
     float z = (M*log(cosh((sqrt(Fup - M*G) * sqrt(0.5*C*P*A) * time) / M))) / (0.5*C*P*A);
     return z;
 }
 
-float getXCoordinate(float z, int time) {
+float getXCoordinate(float z, float time) {
     // Initial conditions
     float Vw;
     if (z<=1000) {
@@ -44,8 +44,8 @@ float getXCoordinate(float z, int time) {
     if (z>1000) {
         if (!newConditions) {
             // Conditions above 1000m
-            float lastZCoordinate = getZCoordinate(time-1);
-            startingD = getXCoordinate(lastZCoordinate, time-1);
+            float lastZCoordinate = getZCoordinate(time-0.01);
+            startingD = getXCoordinate(lastZCoordinate, time-0.01);
             startingV = xVelocityFunction(lastZCoordinate);
             newConditions = true;
         }
@@ -68,23 +68,24 @@ int main(int argc, char **argv) {
 
     dynamics_simulator::true_dynamics msg;
 
-    int simulationTime = 0;
+    float simulationTime = 0.0000000;
+    int simulationCycles = 0;
 
     float coordinateZ;
     float coordinateX;
 
     // Update at rate of 1Hz for start time count down
     ros::Rate delay_start_rate(1);
-    while (ros::ok() && simulationTime < 9) {
-        ROS_INFO("Simulation starting in: %i", 10 - simulationTime);
-        simulationTime++;
+    while (ros::ok() && simulationCycles < 9) {
+        ROS_INFO("Simulation starting in: %i", 10 - simulationCycles);
+        simulationCycles++;
         delay_start_rate.sleep();
     }
 
-    simulationTime = 0;
+    simulationCycles = 0;
 
     // Update at rate of 1Hz for simulation
-    ros::Rate loop_rate(10);
+    ros::Rate loop_rate(100);
     while (ros::ok() && coordinateZ < 2000) {
         // Calculate coordinates
         coordinateZ = getZCoordinate(simulationTime);
@@ -97,15 +98,17 @@ int main(int argc, char **argv) {
         dynamics_publisher.publish(msg);
 
         // Print simulation status every 2 seconds in simulation time
-        if (simulationTime % 1 == 0) {
-            ROS_INFO("Simulation time: %i \t (Current position: Z: %f, X: %f)", simulationTime, coordinateZ, coordinateX);
+        if (simulationCycles % 200 == 0) {
+            ROS_INFO("Simulation time: %f \t (Current position: Z: %f, X: %f)", simulationTime, coordinateZ, coordinateX);
+            simulationCycles = 0;
         }
 
         ros::spinOnce();
 
         loop_rate.sleep();
 
-        simulationTime++;
+        simulationTime+=0.01;
+        simulationCycles++;
     }
 
     return 0;
