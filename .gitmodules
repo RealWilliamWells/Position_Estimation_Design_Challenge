@@ -1,0 +1,3 @@
+[submodule "catkin_ws/src/graph_rviz_plugin"]
+	path = catkin_ws/src/graph_rviz_plugin
+	url = https://gitlab.com/InstitutMaupertuis/graph_rviz_plugin.git
