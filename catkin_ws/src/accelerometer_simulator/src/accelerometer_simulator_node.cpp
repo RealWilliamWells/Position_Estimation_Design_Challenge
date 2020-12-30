@@ -1,5 +1,5 @@
 #include <ros/ros.h>
-#include <gps_simulator/gps_measurement.h>
+#include <accelerometer_simulator/accelerometer_measurement.h>
 
 #include <string.h>
 #include <stdlib.h>
@@ -10,12 +10,12 @@ int main(int argc, char **argv) {
 
     std::string publisher_topic = "accelerometer_sensor";
 
-    ros::Publisher gps_publisher = n.advertise<gps_simulator::gps_measurement>(publisher_topic, 1000);
+    ros::Publisher accelerometer_publisher = n.advertise<accelerometer_simulator::accelerometer_measurement>(publisher_topic, 1000);
 
     // Update at rate of 1Hz
     ros::Rate loop_rate(1);
 
-    gps_simulator::accelerometer_measurement msg;
+    accelerometer_simulator::accelerometer_measurement msg;
 
     while (ros::ok()) {
         float coordinateX = 10;
@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
 
 //        ROS_INFO("%s", msg.x.c_str());
 
-        gps_publisher.publish(msg);
+        accelerometer_publisher.publish(msg);
 
         ros::spinOnce();
 
