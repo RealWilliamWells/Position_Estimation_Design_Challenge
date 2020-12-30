@@ -4,7 +4,8 @@ project(dynamics_simulator)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS roscpp message_generation)
+find_package(catkin REQUIRED COMPONENTS roscpp message_generation roslaunch)
+roslaunch_add_file_check(launch)
 
 #######################################
 ## Declare ROS messages and services ##

@@ -66,9 +66,6 @@ int main(int argc, char **argv) {
 
     ros::Publisher dynamics_publisher = n.advertise<dynamics_simulator::true_dynamics>(publisher_topic, 1000);
 
-    // Update at rate of 1Hz
-    ros::Rate loop_rate(10);
-
     dynamics_simulator::true_dynamics msg;
 
     int simulationTime = 0;
@@ -76,7 +73,19 @@ int main(int argc, char **argv) {
     float coordinateZ;
     float coordinateX;
 
-    while (ros::ok()) {
+    // Update at rate of 1Hz for start time count down
+    ros::Rate delay_start_rate(1);
+    while (ros::ok() && simulationTime < 9) {
+        ROS_INFO("Simulation starting in: %i", 10 - simulationTime);
+        simulationTime++;
+        delay_start_rate.sleep();
+    }
+
+    simulationTime = 0;
+
+    // Update at rate of 1Hz for simulation
+    ros::Rate loop_rate(10);
+    while (ros::ok() && coordinateZ < 2000) {
         // Calculate coordinates
         coordinateZ = getZCoordinate(simulationTime);
         coordinateX = getXCoordinate(coordinateZ, simulationTime);
