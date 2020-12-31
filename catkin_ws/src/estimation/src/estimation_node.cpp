@@ -6,7 +6,6 @@
 #include <random>
 #include <iostream>
 #include <math.h>
-#include <Eigen/Dense>
 
 // Make publisher global, so that it can be used in callback function
 ros::Publisher estimation_publisher;
