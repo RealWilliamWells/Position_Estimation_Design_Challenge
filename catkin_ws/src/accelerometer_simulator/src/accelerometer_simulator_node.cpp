@@ -34,7 +34,7 @@ float getZAcceleration(float time) {
     return (((Fup - M*G)*pow(1.0 / (cosh((sqrt(Fup - M*G)*sqrt(0.5*C*P*A)*time) / M)), 2)) / M) / G;
 }
 
-// Define random generator with Gaussian distribution
+// Define random generator and Gaussian distribution
 const double mean = 0.0;
 const double stddev = 0.1;
 std::default_random_engine generatorX;
