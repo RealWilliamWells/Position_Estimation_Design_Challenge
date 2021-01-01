@@ -6,6 +6,7 @@
 #include <random>
 #include <iostream>
 #include <math.h>
+#include <eigen/Eigen/Dense>
 
 // Make publisher global, so that it can be used in callback function
 ros::Publisher estimation_publisher;
@@ -34,11 +35,25 @@ float variancePredict(float variance1, float variance2) {
     return variance1 + variance2;
 }
 
-// Initial parameters
-const float measurement_variance = pow(60,2);
-const float motion_variance = pow(0.1,2);
-float mean = 0;
-float variance = 10000000; // Start with high number because of initial high uncertainty
+// Initial parameters for filter
+float lastTime = 0;
+float timeDifference = 0;
+
+const Eigen::MatrixXd processVariance(2,2);
+processVariance(0,0) = pow(0.1,2)
+processVariance(0,1) = 0.00
+processVariance(1,0) = 0.00
+processVariance(1,1) = pow(0.1,2)
+
+const Eigen::MatrixXd measureVariance(2,2);
+measureVariance(0,0) = pow(60.00,2)
+measureVariance(0,1) = 0.00
+measureVariance(1,0) = 0.00
+measureVariance(1,1) = pow(60.00,2)
+
+Eigen::MatrixXd state_transition(2,1);
+state_transition(0,0) = 0.00
+state_transition(1,0) = 0.00
 
 // Filter for one direction
 float kalmanFilter(float measurement, float motion) {
