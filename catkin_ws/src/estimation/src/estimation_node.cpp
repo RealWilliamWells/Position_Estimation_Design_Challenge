@@ -11,61 +11,96 @@
 // Make publisher global, so that it can be used in callback function
 ros::Publisher estimation_publisher;
 
-// Global constants
-float A = 3.00;  // Assume cross section area is 3.00m^2
-float C = 0.35;
-float P = 1.225;  // 1.225g/L air density at 15 degrees Celsius
-float M = 120.00;  // 100kg + 20kg = 120kg
-float Fup = 1500.00;
-float G = 9.81; // Acceleration of gravity
-
-float PositionUpdate(float mean1, float variance1, float mean2, float variance2) {
-    return (variance2*mean1 + variance1*mean2) / (variance2+variance1);
-}
-
-float varianceUpdate(float variance1, float variance2) {
-    return 1/(1 / variance1 + 1 / variance2);
-}
-
-float meanPredict(float mean1, float mean2) {
-    return mean1 + mean2;
-}
-
-float variancePredict(float variance1, float variance2) {
-    return variance1 + variance2;
-}
-
 // Initial parameters for filter
 float lastTime = 0;
-float timeDifference = 0;
 
-const Eigen::MatrixXd processVariance(2,2);
-processVariance(0,0) = pow(0.1,2)
-processVariance(0,1) = 0.00
-processVariance(1,0) = 0.00
-processVariance(1,1) = pow(0.1,2)
+Eigen::MatrixXf I(2,1);
 
-const Eigen::MatrixXd measureVariance(2,2);
-measureVariance(0,0) = pow(60.00,2)
-measureVariance(0,1) = 0.00
-measureVariance(1,0) = 0.00
-measureVariance(1,1) = pow(60.00,2)
+Eigen::MatrixXf processVariance(2,1);
 
-Eigen::MatrixXd state_transition(2,1);
-state_transition(0,0) = 0.00
-state_transition(1,0) = 0.00
+Eigen::MatrixXf measureVariance(2,1);
 
-// Filter for one direction
-float kalmanFilter(float measurement, float motion) {
-    // Update values
-    mean = meanUpdate(mean, variance, motion, measurement_variance);
-    variance = varianceUpdate(variance, measurement_variance);
+// Initial state
+Eigen::MatrixXf stateX(1,1);
 
-    // Predict
-    mean = meanPredict(mean, measurement);
-    variance = variancePredict(variance, motion_variance);
+Eigen::MatrixXf H(1,2);
 
-    return mean;
+// Initial error covariance
+Eigen::MatrixXf errorCovarianceX(2,1);
+
+// Equations for filter predict stage
+Eigen::MatrixXf getStateTransitionMatrix(float deltaTime) {
+    Eigen::MatrixXf stateTransition(1,2);
+    stateTransition(0,0) = 1.00;
+    stateTransition(0,1) = deltaTime;
+
+    return stateTransition;
+}
+
+Eigen::MatrixXf getControlMatrix(float deltaTime) {
+    Eigen::MatrixXf controlMatrix(1,1);
+    controlMatrix(0,0) = 0.5 * pow(deltaTime, 2);
+
+    return controlMatrix;
+}
+
+Eigen::MatrixXf getVector(float value) {
+    Eigen::MatrixXf controlVector(1,1);
+    controlVector(0,0) = value;
+
+    return controlVector;
+}
+
+void predictState(Eigen::MatrixXf controlMatrix, Eigen::MatrixXf controlVector, Eigen::MatrixXf stateTransition) {
+    stateX = stateTransition * stateX + controlMatrix * controlVector;
+}
+
+void predictErrorCovariance(Eigen::MatrixXf stateTransition) {
+    errorCovarianceX = stateTransition * errorCovarianceX * stateTransition.transpose() + processVariance;
+}
+
+void kalmanPredict(float deltaTime, float acceleration) {
+    Eigen::MatrixXf stateTransition = getStateTransitionMatrix(deltaTime);
+    Eigen::MatrixXf controlMatrix = getControlMatrix(deltaTime);
+    Eigen::MatrixXf controlVector = getVector(acceleration);
+
+    predictState(controlMatrix, controlVector, stateTransition);
+
+    std::cout<<"test";
+
+    predictErrorCovariance(stateTransition);
+}
+
+// Equations for filter update stage
+Eigen::MatrixXf getKalmanGain() {
+    return stateX * H.transpose() * (H * stateX * H.transpose() + measureVariance).inverse();
+}
+
+void updateEstimate(Eigen::MatrixXf kalmanGain, Eigen::MatrixXf measurementVector) {
+    stateX = stateX + kalmanGain * (measurementVector - H*errorCovarianceX);
+}
+
+void updateErrorCovariance(Eigen::MatrixXf kalmanGain) {
+    errorCovarianceX = (I - kalmanGain * H) * errorCovarianceX;
+}
+
+void kalmanUpdate(float position) {
+    Eigen::MatrixXf kalmanGain = getKalmanGain();
+    Eigen::MatrixXf measurementVector = getVector(position);
+
+    updateEstimate(kalmanGain, measurementVector);
+    updateErrorCovariance(kalmanGain);
+}
+
+// Main kalman function
+void kalmanFilter(float position, float acceleration, float time) {
+    float deltaTime = time - lastTime;
+
+    kalmanPredict(deltaTime, acceleration);
+
+    kalmanUpdate(position);
+
+    lastTime = time;
 }
 
 // Data from sensors management
@@ -87,10 +122,9 @@ void accelerometerCallback(const dynamics_simulator::true_dynamics& msg) {
     if (receivedGPS) {
         accelerometer_msg = msg;
 
-        std::cout<<"TIME: "<<gps_msg.time<<" A: "<<accelerometer_msg.time<<"\n";
-
         // X direction
-        estimated_msg.x = kalmanFilter(gps_msg.x, accelerometer_msg.x);
+        kalmanFilter(gps_msg.xPosition, accelerometer_msg.xPosition, accelerometer_msg.time);
+        estimated_msg.xPosition = stateX(0,0);
         estimated_msg.time = accelerometer_msg.time;
 
         estimation_publisher.publish(estimated_msg);
@@ -100,6 +134,27 @@ void accelerometerCallback(const dynamics_simulator::true_dynamics& msg) {
 }
 
 int main(int argc, char **argv) {
+    // Initial parameters for filter
+    I(0,0) = 1.00;
+    I(1,0) = 0.00;
+
+    processVariance(0,0) = pow(0.1,2);
+    processVariance(1,0) = 0.00;
+
+    measureVariance(0,0) = pow(60.00,2);
+    measureVariance(1,0) = 0.00;
+
+    Eigen::MatrixXf stateX(1,1);
+    stateX(0,0) = 0.00; // Position
+
+    H(0,0) = 1.00;
+    H(0,1) = 0.00;
+
+    // Initial error covariance
+    errorCovarianceX(0,0) = 1000.00;
+    errorCovarianceX(1,0) = 0.00;
+
+    // Initialize node
     ros::init(argc, argv, "accelerometer_simulator_node");
     ros::NodeHandle n;
 

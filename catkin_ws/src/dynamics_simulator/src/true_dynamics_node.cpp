@@ -18,15 +18,28 @@ float startingV = 0;
 float startingD = 0;
 bool newConditions = false;
 
+// Velocity functions
 float xVelocityFunction(float z) {
     // Constants
-    float Vw = -5.00;  // Wind velocity 1000m and below
+    float Vw;
+    if (z<=1000) {
+        Vw = -5.00;  // Wind velocity 1000m and below
+    } else {
+        Vw = 5.00;  // Wind velocity above 1000m
 
-    float Vx = -Vw*exp((-C*P*A*z)/(2*M)) + Vw;
+        z -= 1000;
+    }
+
+    float Vx = -Vw*exp((-C*P*A*z)/(2*M)) + Vw + startingV;
 
     return Vx;
 }
 
+float zVelocityFunction(float time) {
+    return (sqrt(Fup - M*G) * tanh((sqrt(Fup - M*G) * sqrt(0.5*C*P*A) * time) / M)) / (sqrt(0.5*C*P*A));
+}
+
+// Position functions
 float getZCoordinate(float time) {
     float z = (M*log(cosh((sqrt(Fup - M*G) * sqrt(0.5*C*P*A) * time) / M))) / (0.5*C*P*A);
     return z;
@@ -39,9 +52,7 @@ float getXCoordinate(float z, float time) {
         Vw = -5.00;  // Wind velocity 1000m and below
     } else {
         Vw = 5.00;  // Wind velocity above 1000m
-    }
 
-    if (z>1000) {
         if (!newConditions) {
             // Conditions above 1000m
             float lastZCoordinate = getZCoordinate(time-0.01);
@@ -90,9 +101,13 @@ int main(int argc, char **argv) {
         // Calculate coordinates
         coordinateZ = getZCoordinate(simulationTime);
         coordinateX = getXCoordinate(coordinateZ, simulationTime);
+        float velocityX = xVelocityFunction(coordinateZ);
+        float velocityZ = zVelocityFunction(simulationTime);
 
-        msg.x = coordinateX;
-        msg.z = coordinateZ;
+        msg.xPosition = coordinateX;
+        msg.zPosition = coordinateZ;
+        msg.xVelocity = velocityX;
+        msg.zVelocity = velocityZ;
         msg.time = simulationTime;
 
         dynamics_publisher.publish(msg);

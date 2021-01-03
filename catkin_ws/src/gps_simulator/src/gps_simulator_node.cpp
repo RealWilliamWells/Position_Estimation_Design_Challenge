@@ -18,15 +18,19 @@ std::normal_distribution<double> dist(mean, stddev);
 dynamics_simulator::true_dynamics generateNoise(const dynamics_simulator::true_dynamics& msg) {
     // Add Gaussian noise
     dynamics_simulator::true_dynamics noiseMsg;
-    noiseMsg.x = msg.x + dist(generator);
-    noiseMsg.z = msg.z + dist(generator);
+    noiseMsg.xPosition = msg.xPosition + dist(generator);
+    noiseMsg.zPosition = msg.zPosition + dist(generator);
     noiseMsg.time = msg.time;
 
     return noiseMsg;
 }
 
 void coordinatesCallback(const dynamics_simulator::true_dynamics& msg) {
-    gps_publisher.publish(generateNoise(msg));
+    dynamics_simulator::true_dynamics gps_msg = generateNoise(msg);
+    gps_msg.xVelocity = msg.xVelocity;
+    gps_msg.zVelocity = msg.zVelocity;
+
+    gps_publisher.publish(gps_msg);
 }
 
 int main(int argc, char **argv) {

@@ -44,13 +44,13 @@ std::normal_distribution<double> distZ(mean, stddev);
 
 dynamics_simulator::true_dynamics generateNoise(const dynamics_simulator::true_dynamics& msg) {
     // Get acceleration values without noise
-    float x = getXAcceleration(msg.z);
+    float x = getXAcceleration(msg.zPosition);
     float z = getZAcceleration(msg.time);
 
     // Add Gaussian noise
     dynamics_simulator::true_dynamics noiseMsg;
-    noiseMsg.x = x + distX(generatorX);
-    noiseMsg.z = z + distZ(generatorZ);
+    noiseMsg.xPosition = x + distX(generatorX);
+    noiseMsg.zPosition = z + distZ(generatorZ);
     noiseMsg.time = msg.time;
 
     return noiseMsg;
