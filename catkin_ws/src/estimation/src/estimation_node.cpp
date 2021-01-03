@@ -22,11 +22,13 @@ Eigen::MatrixXf measureVariance(2,2);
 
 // Initial state
 Eigen::MatrixXf stateX(2,1);
+Eigen::MatrixXf stateZ(2,1);
 
 Eigen::MatrixXf H(2,2);
 
 // Initial error covariance
 Eigen::MatrixXf errorCovarianceX(2,2);
+Eigen::MatrixXf errorCovarianceZ(2,2);
 
 // Equations for filter predict stage
 Eigen::MatrixXf getStateTransitionMatrix(float deltaTime) {
@@ -54,24 +56,22 @@ Eigen::MatrixXf getControlVector(float value) {
     return controlVector;
 }
 
-void predictState(Eigen::MatrixXf controlMatrix, Eigen::MatrixXf controlVector, Eigen::MatrixXf stateTransition) {
-    stateX = stateTransition * stateX + controlMatrix * controlVector;
+void predictState(Eigen::MatrixXf controlMatrix, Eigen::MatrixXf controlVector, Eigen::MatrixXf stateTransition, Eigen::MatrixXf* state) {
+    *state = stateTransition * *state + controlMatrix * controlVector;
 }
 
-void predictErrorCovariance(Eigen::MatrixXf stateTransition) {
-    errorCovarianceX = stateTransition * errorCovarianceX * stateTransition.transpose() + processVariance;
+void predictErrorCovariance(Eigen::MatrixXf stateTransition, Eigen::MatrixXf* errorCovariance) {
+    *errorCovariance = stateTransition * *errorCovariance * stateTransition.transpose() + processVariance;
 }
 
-void kalmanPredict(float deltaTime, float acceleration) {
+void kalmanPredict(float deltaTime, float acceleration, Eigen::MatrixXf* state, Eigen::MatrixXf* errorCovariance) {
     Eigen::MatrixXf stateTransition = getStateTransitionMatrix(deltaTime);
     Eigen::MatrixXf controlMatrix = getControlMatrix(deltaTime);
     Eigen::MatrixXf controlVector = getControlVector(acceleration);
 
-    predictState(controlMatrix, controlVector, stateTransition);
+    predictState(controlMatrix, controlVector, stateTransition, state);
 
-    predictErrorCovariance(stateTransition);
-
-    ROS_INFO("Test0");
+    predictErrorCovariance(stateTransition, errorCovariance);
 }
 
 // Equations for filter update stage
@@ -83,38 +83,34 @@ Eigen::MatrixXf getMeasurementVector(float position, float velocity) {
     return measurementVector;
 }
 
-Eigen::MatrixXf getKalmanGain() {
-    return errorCovarianceX * H.transpose() * (H * errorCovarianceX * H.transpose() + measureVariance).inverse();
+Eigen::MatrixXf getKalmanGain(Eigen::MatrixXf *errorCovariance) {
+    return *errorCovariance * H.transpose() * (H * *errorCovariance * H.transpose() + measureVariance).inverse();
 }
 
-void updateEstimate(Eigen::MatrixXf kalmanGain, Eigen::MatrixXf measurementVector) {
-    stateX = stateX + kalmanGain * (measurementVector - H*stateX);
+void updateEstimate(Eigen::MatrixXf kalmanGain, Eigen::MatrixXf measurementVector, Eigen::MatrixXf *state) {
+    *state = *state + kalmanGain * (measurementVector - H * *state);
 }
 
-void updateErrorCovariance(Eigen::MatrixXf kalmanGain) {
-    errorCovarianceX = (I - kalmanGain * H) * errorCovarianceX;
+void updateErrorCovariance(Eigen::MatrixXf kalmanGain, Eigen::MatrixXf *errorCovariance) {
+    *errorCovariance = (I - kalmanGain * H) * *errorCovariance;
 }
 
-void kalmanUpdate(float position, float velocity) {
-    Eigen::MatrixXf kalmanGain = getKalmanGain();
+void kalmanUpdate(float position, float velocity, Eigen::MatrixXf* state, Eigen::MatrixXf *errorCovariance) {
+    Eigen::MatrixXf kalmanGain = getKalmanGain(errorCovariance);
     Eigen::MatrixXf measurementVector = getMeasurementVector(position, velocity);
 
-    updateEstimate(kalmanGain, measurementVector);
+    updateEstimate(kalmanGain, measurementVector, state);
 
-    ROS_INFO("Test1");
-
-    updateErrorCovariance(kalmanGain);
-
-    ROS_INFO("Test2");
+    updateErrorCovariance(kalmanGain, errorCovariance);
 }
 
 // Main kalman function
-void kalmanFilter(float position, float velocity, float acceleration, float time) {
+void kalmanFilter(float position, float velocity, float acceleration, float time, Eigen::MatrixXf *state, Eigen::MatrixXf *errorCovariance) {
     float deltaTime = time - lastTime;
 
-    kalmanPredict(deltaTime, acceleration);
+    kalmanPredict(deltaTime, acceleration, state, errorCovariance);
 
-    kalmanUpdate(position, velocity);
+    kalmanUpdate(position, velocity, state, errorCovariance);
 
     lastTime = time;
 }
@@ -139,8 +135,12 @@ void accelerometerCallback(const dynamics_simulator::true_dynamics& msg) {
         accelerometer_msg = msg;
 
         // X direction
-        kalmanFilter(gps_msg.xPosition, gps_msg.xVelocity, accelerometer_msg.xPosition, accelerometer_msg.time);
+        kalmanFilter(gps_msg.xPosition, gps_msg.xVelocity, accelerometer_msg.xPosition, accelerometer_msg.time,
+                     &stateX, &errorCovarianceX);
+        kalmanFilter(gps_msg.zPosition, gps_msg.zVelocity, accelerometer_msg.zPosition, accelerometer_msg.time,
+                     &stateZ, &errorCovarianceZ);
         estimated_msg.xPosition = stateX(0,0);
+        estimated_msg.zPosition = stateZ(0,0);
         estimated_msg.time = accelerometer_msg.time;
 
         estimation_publisher.publish(estimated_msg);
@@ -167,9 +167,12 @@ int main(int argc, char **argv) {
     measureVariance(1,0) = 0.00;
     measureVariance(1,1) = pow(60.00,2);
 
-    Eigen::MatrixXf stateX(2,1);
+    // Initial state
     stateX(0,0) = 0.00; // Position
     stateX(1,0) = 0.00; // Velocity
+
+    stateZ(0,0) = 0.00; // Position
+    stateZ(1,0) = 0.00; // Velocity
 
     H(0,0) = 1.00;
     H(0,1) = 0.00;
@@ -177,10 +180,15 @@ int main(int argc, char **argv) {
     H(1,1) = 1.00;
 
     // Initial error covariance
-    errorCovarianceX(0,0) = 1000.00;
+    errorCovarianceX(0,0) = 100.00;
     errorCovarianceX(0,1) = 0.00;
     errorCovarianceX(1,0) = 0.00;
-    errorCovarianceX(1,1) = 1000.00;
+    errorCovarianceX(1,1) = 100.00;
+
+    errorCovarianceZ(0,0) = 1000.00;
+    errorCovarianceZ(0,1) = 0.00;
+    errorCovarianceZ(1,0) = 0.00;
+    errorCovarianceZ(1,1) = 1000.00;
 
     // Initialize node
     ros::init(argc, argv, "accelerometer_simulator_node");
