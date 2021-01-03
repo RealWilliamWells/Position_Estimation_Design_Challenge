@@ -11,6 +11,12 @@
 // Make publisher global, so that it can be used in callback function
 ros::Publisher estimation_publisher;
 
+// Define random generator and Gaussian distribution for white process noise
+const double mean = 0.0;
+const double stddev = 5;
+std::default_random_engine generator;
+std::normal_distribution<double> distribution(mean, stddev);
+
 // Initial parameters for filter
 float lastTime = 0;
 
@@ -56,8 +62,16 @@ Eigen::MatrixXf getControlVector(float value) {
     return controlVector;
 }
 
+Eigen::MatrixXf getWhiteNoise() {
+    Eigen::MatrixXf whiteNoise(2,1);
+    whiteNoise(0,0) = distribution(generator);
+    whiteNoise(1,0) = 0;
+
+    return whiteNoise;
+}
+
 void predictState(Eigen::MatrixXf controlMatrix, Eigen::MatrixXf controlVector, Eigen::MatrixXf stateTransition, Eigen::MatrixXf* state) {
-    *state = stateTransition * *state + controlMatrix * controlVector;
+    *state = stateTransition * *state + controlMatrix * controlVector + getWhiteNoise();
 }
 
 void predictErrorCovariance(Eigen::MatrixXf stateTransition, Eigen::MatrixXf* errorCovariance) {
@@ -133,10 +147,13 @@ void accelerometerCallback(const dynamics_simulator::true_dynamics& msg) {
     if (receivedGPS) {
         accelerometer_msg = msg;
 
+        // Run filter for x direction
         kalmanFilter(gps_msg.xPosition, gps_msg.xVelocity, accelerometer_msg.xAcceleration*9.81, accelerometer_msg.time,
                      &stateX, &errorCovarianceX);
+        // Run filter for z direction
         kalmanFilter(gps_msg.zPosition, gps_msg.zVelocity, accelerometer_msg.zAcceleration*9.81, accelerometer_msg.time,
                      &stateZ, &errorCovarianceZ);
+
         estimated_msg.xPosition = stateX(0,0);
         estimated_msg.zPosition = stateZ(0,0);
         estimated_msg.time = accelerometer_msg.time;

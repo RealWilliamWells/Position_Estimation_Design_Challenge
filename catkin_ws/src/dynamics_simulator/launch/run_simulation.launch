@@ -2,7 +2,7 @@
     <!-- Run sensor simulators !-->
     <node name="gps_simulator" pkg="gps_simulator" type="gps_simulator" />
     <node name="accelerometer_simulator" pkg="accelerometer_simulator" type="accelerometer_simulator" />
-    <node name="estimation" pkg="estimation" type="estimation" />
+    <node name="estimation" pkg="estimation" type="estimation" output="screen" />
 
     <!-- Run graph_rviz_plugin republishers for graphing !-->
     <node name="graph_rviz_plugin_gps_x" pkg="graph_rviz_plugin" type="subtopic_repub.py" args="/gps_sensor/xPosition /gps_x" />

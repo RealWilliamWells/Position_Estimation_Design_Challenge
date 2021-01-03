@@ -32,7 +32,7 @@ float getXAcceleration(float z) {
 }
 
 float getZAcceleration(float time) {
-    return (((Fup - M*G)*pow(1.0 / (cosh((sqrt(Fup - M*G)*sqrt(0.5*C*P*A)*time) / M)), 2)) / M) / G;
+    return (((Fup - M*G)*(1.0 / pow(cosh((sqrt(Fup - M*G)*sqrt(0.5*C*P*A)*time) / M), 2))) / M) / G;
 }
 
 // Velocity functions

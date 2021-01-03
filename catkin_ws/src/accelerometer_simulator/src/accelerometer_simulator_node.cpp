@@ -15,8 +15,7 @@ const double mean = 0.0;
 const double stddev = 0.1;
 std::default_random_engine generatorX;
 std::default_random_engine generatorZ;
-std::normal_distribution<double> distX(mean, stddev);
-std::normal_distribution<double> distZ(mean, stddev);
+std::normal_distribution<double> distribution(mean, stddev);
 
 dynamics_simulator::true_dynamics generateNoise(const dynamics_simulator::true_dynamics& msg) {
     // Get acceleration values without noise
@@ -25,8 +24,8 @@ dynamics_simulator::true_dynamics generateNoise(const dynamics_simulator::true_d
 
     // Add Gaussian noise
     dynamics_simulator::true_dynamics noiseMsg;
-    noiseMsg.xAcceleration = x + distX(generatorX);
-    noiseMsg.zAcceleration = z + distZ(generatorZ);
+    noiseMsg.xAcceleration = x + distribution(generatorX);
+    noiseMsg.zAcceleration = z + distribution(generatorZ);
     noiseMsg.time = msg.time;
 
     return noiseMsg;
