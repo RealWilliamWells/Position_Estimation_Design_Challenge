@@ -5,7 +5,7 @@
     <node name="estimation" pkg="estimation" type="estimation" output="screen" />
 
     <!-- Run graph_rviz_plugin republishers for graphing !-->
-    <node name="graph_rviz_plugin_estimation_x" pkg="graph_rviz_plugin" type="subtopic_repub.py" args="/position_estimation/x /position_estimation_x" />
+    <node name="graph_rviz_plugin_estimation_x" pkg="graph_rviz_plugin" type="subtopic_repub.py" args="/position_estimation/xPosition /position_estimation_x" />
 
     <!-- Run rviz with graphing config !-->
     <node type="rviz" name="rviz" pkg="rviz" args="-d $(find estimation)/rviz/rviz_graphing_config_kalman_test.rviz" />
