@@ -18,6 +18,23 @@ float startingV = 0;
 float startingD = 0;
 bool newConditions = false;
 
+// Acceleration functions
+float getXAcceleration(float z) {
+    float Vw;
+    if (z<=1000) {
+        Vw = -5.00;  // Wind velocity 1000m and below
+    } else {
+        Vw = 5.00;  // Wind velocity above 1000m
+        z -= 1000;
+    }
+
+    return ((Vw*C*P*A*exp((-C*P*A*z) / (2*M))) / (2*M)) / G;
+}
+
+float getZAcceleration(float time) {
+    return (((Fup - M*G)*pow(1.0 / (cosh((sqrt(Fup - M*G)*sqrt(0.5*C*P*A)*time) / M)), 2)) / M) / G;
+}
+
 // Velocity functions
 float xVelocityFunction(float z) {
     // Constants
@@ -87,7 +104,7 @@ int main(int argc, char **argv) {
 
     // Update at rate of 1Hz for start time count down
     ros::Rate delay_start_rate(1);
-    while (ros::ok() && simulationCycles < 9) {
+    while (ros::ok() && simulationCycles < 10) {
         ROS_INFO("Simulation starting in: %i", 10 - simulationCycles);
         simulationCycles++;
         delay_start_rate.sleep();
@@ -103,11 +120,15 @@ int main(int argc, char **argv) {
         coordinateX = getXCoordinate(coordinateZ, simulationTime);
         float velocityX = xVelocityFunction(coordinateZ);
         float velocityZ = zVelocityFunction(simulationTime);
+        float accelerationX = getXAcceleration(coordinateZ);
+        float accelerationZ = getZAcceleration(simulationTime);
 
         msg.xPosition = coordinateX;
         msg.zPosition = coordinateZ;
         msg.xVelocity = velocityX;
         msg.zVelocity = velocityZ;
+        msg.zAcceleration = accelerationX;
+        msg.zAcceleration = accelerationZ;
         msg.time = simulationTime;
 
         dynamics_publisher.publish(msg);

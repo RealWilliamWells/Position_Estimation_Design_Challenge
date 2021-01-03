@@ -10,30 +10,6 @@
 // Make publisher global, so that it can be used in callback function
 ros::Publisher accelerometer_publisher;
 
-// Global constants
-float A = 3.00;  // Assume cross section area is 3.00m^2
-float C = 0.35;
-float P = 1.225;  // 1.225g/L air density at 15 degrees Celsius
-float M = 120.00;  // 100kg + 20kg = 120kg
-float Fup = 1500.00;
-float G = 9.81; // Acceleration of gravity
-
-float getXAcceleration(float z) {
-    float Vw;
-    if (z<=1000) {
-        Vw = -5.00;  // Wind velocity 1000m and below
-    } else {
-        Vw = 5.00;  // Wind velocity above 1000m
-        z -= 1000;
-    }
-
-    return ((Vw*C*P*A*exp((-C*P*A*z) / (2*M))) / (2*M)) / G;
-}
-
-float getZAcceleration(float time) {
-    return (((Fup - M*G)*pow(1.0 / (cosh((sqrt(Fup - M*G)*sqrt(0.5*C*P*A)*time) / M)), 2)) / M) / G;
-}
-
 // Define random generator and Gaussian distribution
 const double mean = 0.0;
 const double stddev = 0.1;
@@ -44,13 +20,13 @@ std::normal_distribution<double> distZ(mean, stddev);
 
 dynamics_simulator::true_dynamics generateNoise(const dynamics_simulator::true_dynamics& msg) {
     // Get acceleration values without noise
-    float x = getXAcceleration(msg.zPosition);
-    float z = getZAcceleration(msg.time);
+    float x = msg.xAcceleration;
+    float z = msg.zAcceleration;
 
     // Add Gaussian noise
     dynamics_simulator::true_dynamics noiseMsg;
-    noiseMsg.xPosition = x + distX(generatorX);
-    noiseMsg.zPosition = z + distZ(generatorZ);
+    noiseMsg.xAcceleration = x + distX(generatorX);
+    noiseMsg.zAcceleration = z + distZ(generatorZ);
     noiseMsg.time = msg.time;
 
     return noiseMsg;

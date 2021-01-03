@@ -122,7 +122,6 @@ dynamics_simulator::true_dynamics accelerometer_msg;
 
 dynamics_simulator::true_dynamics estimated_msg;
 
-// SensorID is 0 for GPS sensor, SensorID is 1 for accelerometer sensor
 void gpsCallback(const dynamics_simulator::true_dynamics& msg) {
     if (!receivedGPS) {
         gps_msg = msg;
@@ -134,10 +133,9 @@ void accelerometerCallback(const dynamics_simulator::true_dynamics& msg) {
     if (receivedGPS) {
         accelerometer_msg = msg;
 
-        // X direction
-        kalmanFilter(gps_msg.xPosition, gps_msg.xVelocity, accelerometer_msg.xPosition, accelerometer_msg.time,
+        kalmanFilter(gps_msg.xPosition, gps_msg.xVelocity, accelerometer_msg.xAcceleration*9.81, accelerometer_msg.time,
                      &stateX, &errorCovarianceX);
-        kalmanFilter(gps_msg.zPosition, gps_msg.zVelocity, accelerometer_msg.zPosition, accelerometer_msg.time,
+        kalmanFilter(gps_msg.zPosition, gps_msg.zVelocity, accelerometer_msg.zAcceleration*9.81, accelerometer_msg.time,
                      &stateZ, &errorCovarianceZ);
         estimated_msg.xPosition = stateX(0,0);
         estimated_msg.zPosition = stateZ(0,0);
@@ -180,10 +178,10 @@ int main(int argc, char **argv) {
     H(1,1) = 1.00;
 
     // Initial error covariance
-    errorCovarianceX(0,0) = 100.00;
+    errorCovarianceX(0,0) = 1000.00;
     errorCovarianceX(0,1) = 0.00;
     errorCovarianceX(1,0) = 0.00;
-    errorCovarianceX(1,1) = 100.00;
+    errorCovarianceX(1,1) = 1000.00;
 
     errorCovarianceZ(0,0) = 1000.00;
     errorCovarianceZ(0,1) = 0.00;
