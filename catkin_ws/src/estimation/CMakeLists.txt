@@ -4,8 +4,7 @@ project(estimation)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS roscpp message_generation dynamics_simulator roslaunch)
-roslaunch_add_file_check(launch)
+find_package(catkin REQUIRED COMPONENTS roscpp message_generation dynamics_simulator)
 
 ###################################################
 ## Declare things to be passed to other projects ##
