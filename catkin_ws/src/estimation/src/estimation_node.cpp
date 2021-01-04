@@ -14,8 +14,6 @@ ros::Publisher estimation_publisher;
 // Initial parameters for filter
 float lastTime = 0;
 
-Eigen::MatrixXf I(2,2);
-
 Eigen::MatrixXf processVariance(2,2);
 
 Eigen::MatrixXf measureVariance(2,2);
@@ -29,6 +27,8 @@ Eigen::MatrixXf H(2,2);
 // Initial error covariance
 Eigen::MatrixXf errorCovarianceX(2,2);
 Eigen::MatrixXf errorCovarianceZ(2,2);
+
+Eigen::MatrixXf whiteNoise(2,1);
 
 // Equations for filter predict stage
 Eigen::MatrixXf getStateTransitionMatrix(float deltaTime) {
@@ -56,16 +56,8 @@ Eigen::MatrixXf getControlVector(float acceleration) {
     return controlVector;
 }
 
-Eigen::MatrixXf getWhiteNoise() {
-    Eigen::MatrixXf whiteNoise(2,1);
-    whiteNoise(0,0) = pow(5.00, 2);
-    whiteNoise(1,0) = 0.00;
-
-    return whiteNoise;
-}
-
 void predictState(Eigen::MatrixXf controlMatrix, Eigen::MatrixXf controlVector, Eigen::MatrixXf stateTransition, Eigen::MatrixXf* state) {
-    *state = stateTransition * *state + controlMatrix * controlVector + getWhiteNoise();
+    *state = stateTransition * *state + controlMatrix * controlVector + whiteNoise;
 }
 
 void predictErrorCovariance(Eigen::MatrixXf stateTransition, Eigen::MatrixXf* errorCovariance) {
@@ -160,11 +152,6 @@ void accelerometerCallback(const dynamics_simulator::true_dynamics& msg) {
 
 int main(int argc, char **argv) {
     // Initial parameters for filter
-    I(0,0) = 1.00;
-    I(0,1) = 0.00;
-    I(1,0) = 0.00;
-    I(1,1) = 1.00;
-
     processVariance(0,0) = pow(5,2);
     processVariance(0,1) = 0.00;
     processVariance(1,0) = 0.00;
@@ -198,6 +185,9 @@ int main(int argc, char **argv) {
     errorCovarianceZ(0,1) = 0.00;
     errorCovarianceZ(1,0) = 0.00;
     errorCovarianceZ(1,1) = 1000.00;
+
+    whiteNoise(0,0) = pow(5.00, 2);
+    whiteNoise(1,0) = 0.00;
 
     // Initialize node
     ros::init(argc, argv, "accelerometer_simulator_node");
