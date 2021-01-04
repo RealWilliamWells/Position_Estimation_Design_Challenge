@@ -11,12 +11,6 @@
 // Make publisher global, so that it can be used in callback function
 ros::Publisher estimation_publisher;
 
-// Define random generator and Gaussian distribution for white process noise
-const double mean = 0.0;
-const double stddev = 5;
-std::default_random_engine generator;
-std::normal_distribution<double> distribution(mean, stddev);
-
 // Initial parameters for filter
 float lastTime = 0;
 
@@ -55,17 +49,17 @@ Eigen::MatrixXf getControlMatrix(float deltaTime) {
     return controlMatrix;
 }
 
-Eigen::MatrixXf getControlVector(float value) {
+Eigen::MatrixXf getControlVector(float acceleration) {
     Eigen::MatrixXf controlVector(1,1);
-    controlVector(0,0) = value;
+    controlVector(0,0) = acceleration;
 
     return controlVector;
 }
 
 Eigen::MatrixXf getWhiteNoise() {
     Eigen::MatrixXf whiteNoise(2,1);
-    whiteNoise(0,0) = distribution(generator);
-    whiteNoise(1,0) = 0;
+    whiteNoise(0,0) = pow(5.00, 2);
+    whiteNoise(1,0) = 0.00;
 
     return whiteNoise;
 }
@@ -106,7 +100,7 @@ void updateEstimate(Eigen::MatrixXf kalmanGain, Eigen::MatrixXf measurementVecto
 }
 
 void updateErrorCovariance(Eigen::MatrixXf kalmanGain, Eigen::MatrixXf *errorCovariance) {
-    *errorCovariance = (I - kalmanGain * H) * *errorCovariance;
+    *errorCovariance = *errorCovariance - kalmanGain * H * *errorCovariance;
 }
 
 void kalmanUpdate(float position, float velocity, Eigen::MatrixXf* state, Eigen::MatrixXf *errorCovariance) {
@@ -171,10 +165,10 @@ int main(int argc, char **argv) {
     I(1,0) = 0.00;
     I(1,1) = 1.00;
 
-    processVariance(0,0) = pow(0.1,2);
+    processVariance(0,0) = pow(5,2);
     processVariance(0,1) = 0.00;
     processVariance(1,0) = 0.00;
-    processVariance(1,1) = pow(0.1,2);
+    processVariance(1,1) = pow(5,2);
 
 
     measureVariance(0,0) = pow(60.00,2);

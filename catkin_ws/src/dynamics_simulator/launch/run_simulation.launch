@@ -5,6 +5,9 @@
     <node name="estimation" pkg="estimation" type="estimation" output="screen" />
 
     <!-- Run graph_rviz_plugin republishers for graphing !-->
+    <node name="graph_rviz_plugin_true_dynamics_x" pkg="graph_rviz_plugin" type="subtopic_repub.py" args="/true_dynamics/xPosition /true_dynamics_x" />
+    <node name="graph_rviz_plugin_true_dynamics_z" pkg="graph_rviz_plugin" type="subtopic_repub.py" args="/true_dynamics/zPosition /true_dynamics_z" />
+
     <node name="graph_rviz_plugin_gps_x" pkg="graph_rviz_plugin" type="subtopic_repub.py" args="/gps_sensor/xPosition /gps_x" />
     <node name="graph_rviz_plugin_gps_z" pkg="graph_rviz_plugin" type="subtopic_repub.py" args="/gps_sensor/zPosition /gps_z" />
 
@@ -15,7 +18,7 @@
     <node name="graph_rviz_plugin_estimation_z" pkg="graph_rviz_plugin" type="subtopic_repub.py" args="/position_estimation/zPosition /position_estimation_z" />
 
     <!-- Run rviz with graphing config !-->
-    <node type="rviz" name="rviz" pkg="rviz" args="-d $(find dynamics_simulator)/rviz/rviz_graphing_config.rviz" />
+    <node type="rviz" name="rviz" pkg="rviz" args="-d $(find dynamics_simulator)/rviz/rviz_graphing_config_test.rviz" />
 
     <!-- Start simulation !-->
     <node name="dynamics_simulator" pkg="dynamics_simulator" type="dynamics_simulator" output="screen" />
