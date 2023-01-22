@@ -1,5 +1,5 @@
-# Spaceryde_Design_Challenge
-My solution to the software design challenge for the software engineering intern position at Spaceryde. Coded almost entirely in C++.
+# Position_Estimation_Design_Challenge
+My solution to the software design challenge for the software engineering intern position at an unnamed company. Coded almost entirely in C++.
 
 # Submodules used
 graph_rviz_plugin
