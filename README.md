@@ -11,7 +11,7 @@ https://gitlab.com/libeigen/eigen.git
 - For matrix data type and operations
 
 # Usage
-Make sure to clone recursively with `git clone --recursive https://github.com/RealWilliamWells/Spaceryde_Design_Challenge`, in order to clone both the main repository and the necessary submodules used in the catkin workspace. Not necessary if sent in zip file with submodules included.
+Make sure to clone recursively with `git clone --recursive https://github.com/RealWilliamWells/Position_Estimation_Design_Challenge`, in order to clone both the main repository and the necessary submodules used in the catkin workspace. Not necessary if sent in zip file with submodules included.
 
 In the terminal, goto the "catkin_ws" folder. Then run the following commands in order to compile everything: 
 
